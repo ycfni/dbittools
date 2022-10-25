@@ -1,4 +1,4 @@
-# ProjectTemplate
+# dbittools
 An empty project template to start with. Contains the directory structure:
 
 
