@@ -23,7 +23,7 @@ CSV_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/inter
 MATX_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections_matx.txt'
 
 // # spots desired per dimension in DBiT area square
-int SPOTS_PER_SIDE = 5
+int SPOTS_PER_SIDE = 50
 
 // CLASS LABELS
 //DBiT area should be a square (shift + draw rectangle obj) of any rotation
@@ -285,3 +285,4 @@ for (int i = 0; i < retarr.length; i++) {
 }
 
 println("done")
+dan
