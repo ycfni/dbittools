@@ -7,6 +7,20 @@
  */
  
  
+ /**
+ * Usage:  
+ * If they don't exist already, create the following annotation classes:
+ *    -  'DBiT-seq area'
+ *    -  'spot'
+ *    -  'strip'
+ *
+ * Using the QuPath GUI, draw a sqaure annotation (hold SHIFT with rectangle tool).
+ * Assign class 'DBiT-seq area' to the square annotation
+ * Create other annotations with arbitrary class names, to segment image as you like
+ * Run this script
+ *
+ */
+ 
 // IMPORTS
 import org.locationtech.jts.geom.Geometry
 import qupath.lib.common.GeneralTools
@@ -18,9 +32,9 @@ import static qupath.lib.gui.scripting.QPEx.*
 
 // PATHS
 //optional csv of "Intersection of OBJ with SPOT: X.XX" format to assist review of matx
-CSV_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections.csv'
+CSV_PATH = '/Users/mmd47/Dropbox/Workspace/dbittools/Analysis/Scripts/QuPath/tmp.csv'
 //final comma-separated matrix in .txt format for downstream ingestion as obs columns
-MATX_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections_matx.txt'
+MATX_PATH = '/Users/mmd47/Dropbox/Workspace/dbittools/Analysis/Scripts/QuPath/Annotations.txt'
 
 // # spots desired per dimension in DBiT area square
 int SPOTS_PER_SIDE = 50
@@ -285,4 +299,3 @@ for (int i = 0; i < retarr.length; i++) {
 }
 
 println("done")
-dan
