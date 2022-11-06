@@ -7,20 +7,6 @@
  */
  
  
- /**
- * Usage:  
- * If they don't exist already, create the following annotation classes:
- *    -  'DBiT-seq area'
- *    -  'spot'
- *    -  'strip'
- *
- * Using the QuPath GUI, draw a sqaure annotation (hold SHIFT with rectangle tool).
- * Assign class 'DBiT-seq area' to the square annotation
- * Create other annotations with arbitrary class names, to segment image as you like
- * Run this script
- *
- */
- 
 // IMPORTS
 import org.locationtech.jts.geom.Geometry
 import qupath.lib.common.GeneralTools
@@ -29,12 +15,15 @@ import qupath.lib.objects.PathObjects
 import qupath.lib.roi.GeometryTools
 import qupath.lib.roi.ROIs
 import static qupath.lib.gui.scripting.QPEx.*
+import qupath.lib.common.ColorTools
+import qupath.lib.objects.classes.PathClassFactory
+import qupath.lib.scripting.QP
 
 // PATHS
 //optional csv of "Intersection of OBJ with SPOT: X.XX" format to assist review of matx
-CSV_PATH = '/Users/mmd47/Dropbox/Workspace/dbittools/Analysis/Scripts/QuPath/tmp.csv'
+CSV_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections.csv'
 //final comma-separated matrix in .txt format for downstream ingestion as obs columns
-MATX_PATH = '/Users/mmd47/Dropbox/Workspace/dbittools/Analysis/Scripts/QuPath/Annotations.txt'
+MATX_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections_matx.txt'
 
 // # spots desired per dimension in DBiT area square
 int SPOTS_PER_SIDE = 50
@@ -43,15 +32,42 @@ int SPOTS_PER_SIDE = 50
 //DBiT area should be a square (shift + draw rectangle obj) of any rotation
 def DBiT_AREA_LABEL = getPathClass("DBiT-seq area")
 //a spot is a smaller square within the DBiT SPOTS_PER_SIDE x SPOTS_PER_SIDE grid
-def SPOT_LABEL = getPathClass('spot')
+def SPOT_LABEL = getPathClass('Spot')
 //a strip is DBiT area sliced into SPOTS_PER_SIDE-many rectangles as an intermediate step
 //before slicing each of the SPOTS_PER_SIDE-many strips into SPOTS_PER_SIDE-many spots
-def STRIP_LABEL = getPathClass('strip')
+def STRIP_LABEL = getPathClass('Strip')
+//an intersection is an area of overlap between an annotation and a spot
+def INTERSECTION_LABEL = getPathClass("Intersection")
+
+
+//make sure to populate existing/default classes 1st so they aren't deleted
+def newClasses = []
+def pathClasses = getQuPath().getAvailablePathClasses()
+newClasses.addAll(pathClasses)
+
+/*
+create custom classes (aside from DBiT-seq area, which user creates)
+so that the user does not have to do so manually before running
+(need to implement below if-check, otherwise makes class dups on re-run)
+*/
+if (pathClasses.contains(getPathClass('Spot')) == false) {
+    println(pathClasses)
+    newClasses.addAll([SPOT_LABEL, STRIP_LABEL, INTERSECTION_LABEL])
+    newClasses = newClasses as Set
+    //overwrite the available classes with your new list
+    pathClasses.setAll(newClasses)
+}
+
+//delete spots, strips, intersections drawn in previous run, if applicable
+def annots_to_remove = getAnnotationObjects().findAll { ((it.getPathClass() == SPOT_LABEL) ||  (it.getPathClass() == STRIP_LABEL) || (it.getPathClass() == INTERSECTION_LABEL))}
+removeObjects(annots_to_remove, true)
+fireHierarchyUpdate()
+
+//now we're ready to start the intersection identification process
 
 def img_annotations = getAnnotationObjects()
 //script selects the DBiT seq area to split *for* you, but has to be marked as such
 def selected = img_annotations.findAll { it.getPathClass() == DBiT_AREA_LABEL }[0]
-
 if (selected == null) {
     println 'No object selected! Did you assign the DBiT-seq area class to your annotation square?'
 }
@@ -156,11 +172,20 @@ for (annotation in secondary){
     double strip_dy = (stripPoints[stripInd+1].y - strip_y) / SPOTS_PER_SIDE
     double strip_dx2 = (stripPoints[stripInd+2].x - stripPoints[stripInd+1].x)
     double strip_dy2 = (stripPoints[stripInd+2].y - stripPoints[stripInd+1].y)
+    //strip_dx = strip_dx / 2
+    strip_dx2 = strip_dx2 / 2
+    strip_dy = strip_dy / 2
+    strip_dy2 = strip_dy2 / 2
     
     // Add annotations
+    def last_y = 0
     for (int i = 0; i < SPOTS_PER_SIDE; i++) {
         double strip_originX = strip_x + strip_dx*i
         double strip_originY = strip_y + strip_dy*i
+        if (i != 0) {
+            strip_originY = strip_y + strip_dy*2*i //strip_originY * 2
+        }
+        last_y = strip_originY
         def strip_polygon = ROIs.createPolygonROI(
             [strip_originX, 
             strip_originX+strip_dx, 
@@ -192,13 +217,13 @@ nonSpots = getAnnotationObjects().findAll { (it.getPathClass() != DBiT_AREA_LABE
 
 //characterize the annotations throughout the img that the DBiT area might overlap
 listOfClasses = [] 
-nonSpots.each{ listOfClasses << it.getROI().getRoiName()}
-nonspotGeometries = listOfClasses as Set
-print(nonspotGeometries) //which types of annotations do we have geometrically?
-for (shape in nonspotGeometries) {
-    shapeObjs = nonSpots.findAll { it.getROI().getRoiName() == shape}
+nonSpots.each{ listOfClasses << it.getPathClass()}
+nonspotClasses = listOfClasses as Set
+print(nonspotClasses) //which types of annotations do we have geometrically?
+for (classname in nonspotClasses) {
+    classObjs = nonSpots.findAll { it.getPathClass() == classname}
     def idx = 0
-    for (obj in shapeObjs) {
+    for (classobj in classObjs) {
         /*
         give each annotation within a geometric type an ascending ID
         e.g. "Rectangle 0," "Rectangle 1"
@@ -206,7 +231,7 @@ for (shape in nonspotGeometries) {
         (otherwise each annotation falls under the same "null" identity)
         NOTE the DBiT seq area square is NOT counted among Rectangles
         */
-        obj.setName("${shape} ${idx}")
+        classobj.setName("${classname}_${idx}")
         idx = idx + 1
     }
 }
@@ -223,18 +248,21 @@ for (obj in nonSpots) {
 }
 println("The matrix columns correspond to the annotation objects as follows:")
 println(nonspot_inds)
+nonspot_names = nonspot_inds.keySet()
 
 //next step is to fill a 2D arr w/ SPOTS_PER_SIDE x # objects' overlap proportions
 def retarr = new Float [SPOTS_PER_SIDE**2][nonSpots.size()]
+def matx_rownames = []
 //(optional) create csv of positive intersection values per spot & annotation object
-def header = "Intersection ID,Overlap Proportion"
+def csv_header = "Intersection ID,Overlap Proportion"
 new File(CSV_PATH).withWriter { fw ->
-   fw.writeLine(header)
+   fw.writeLine(csv_header)
    for (int i = 0; i < SPOTS_PER_SIDE; i++) {
        for (int j = 0; j < SPOTS_PER_SIDE; j++) {
            nonSpots.each() {
                //first object is the spot in question
                ann01 = getAnnotationObjects().find { it.getName() == "${i} x ${j}"}
+               matx_rownames << "${i}x${j}"
                //second object is the (non-spot, non-DBiT rectangle) annotation in question
                ann02 = it
                 
@@ -269,6 +297,7 @@ new File(CSV_PATH).withWriter { fw ->
                    if (cellval > 0){
                        intersect_annotation = PathObjects.createAnnotationObject(intersect_roi)
                        intersect_annotation.setName("Intersection of ${ann02Name} with ${i} x ${j}")
+                       intersect_annotation.setPathClass(INTERSECTION_LABEL)
                    
                        hierarchy.addPathObject(intersect_annotation) 
                         
@@ -286,16 +315,33 @@ new File(CSV_PATH).withWriter { fw ->
 }
 
 def output_matx = new File(MATX_PATH)
-output_matx.write("") //erase existing contents before writing
+def matx_header = nonspot_names.join(",")
+output_matx.write("Row_ID," + matx_header + "\n") //use write erase existing contents before appending
+def matx_rowname_idx = 0
+//googled around, is there really no "else if" to use??
+//and using a switch runs into issues with multiple-cond checks (multiple satisfied)
 for (int i = 0; i < retarr.length; i++) {
     for (int j = 0; j < retarr[i].length; j++) {
-        if(j == retarr[i].length-1) {
-            output_matx.append(Float.toString(retarr[i][j]) + "\n");
-        } 
-        else {
-            output_matx.append(Float.toString(retarr[i][j]) + ",");
+        if ((j == retarr[i].length-1) && (j == 0)) {
+            output_matx.append(matx_rownames[matx_rowname_idx]  + "," + Float.toString(retarr[i][j]) + "\n");
         }
+        else {
+            if (j == retarr[i].length-1) {
+                output_matx.append(Float.toString(retarr[i][j]) + "\n");
+            }
+            else {
+                if (j == 0) {
+                    output_matx.append(matx_rownames[matx_rowname_idx]  + "," + Float.toString(retarr[i][j]) + ",");
+                }
+                else {
+                    output_matx.append(Float.toString(retarr[i][j]) + ",");
+                }
+            }
+        }
+        matx_rowname_idx = matx_rowname_idx + 1
+  
     }
 }
 
 println("done")
+
