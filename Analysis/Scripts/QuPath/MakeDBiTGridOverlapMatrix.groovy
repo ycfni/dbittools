@@ -86,6 +86,8 @@ double d2 = points[2].distance(points[1])
 double d3 = points[3].distance(points[2])
 double d4 = points[0].distance(points[3])
 
+
+
 double eps = 0.01
 if (Math.abs(d1 - d3) > eps || Math.abs(d4 - d2) > eps) {
     println 'Points do not appear to form a rectangle!'
@@ -106,16 +108,28 @@ double dy = (points[ind+1].y - y) / SPOTS_PER_SIDE
 double dx2 = (points[ind+2].x - points[ind+1].x)
 double dy2 = (points[ind+2].y - points[ind+1].y)
 
+//x = x * 2
+//y = y * 2
+//dx = dx / 2
+//dy = dy / 2
+//dx2 = dx2 / 2
+//dy2 = dy2 / 2
+
 // Add annotations
 def annotations = []
 for (int i = 0; i < SPOTS_PER_SIDE; i++) {
     double originX = x + dx*i
     double originY = y + dy*i
+    
+    originX = originX // / 2
+    originY = originY // / 2
+    
     def polygon = ROIs.createPolygonROI(
         [originX, originX+dx, originX+dx+dx2, originX+dx2] as double[],
         [originY, originY+dy, originY+dy+dy2, originY+dy2] as double[],
         roi.getImagePlane()
     )
+  
     def newAnnotation = PathObjects.createAnnotationObject(polygon)
     //our first pass slices the DBiT seq square into SPOTS_PER_SIDE-many strips
     newAnnotation.setPathClass(STRIP_LABEL)
@@ -172,9 +186,11 @@ for (annotation in secondary){
     double strip_dy = (stripPoints[stripInd+1].y - strip_y) / SPOTS_PER_SIDE
     double strip_dx2 = (stripPoints[stripInd+2].x - stripPoints[stripInd+1].x)
     double strip_dy2 = (stripPoints[stripInd+2].y - stripPoints[stripInd+1].y)
-    //strip_dx = strip_dx / 2
+    strip_x = strip_x + .5*strip_dx
+    strip_y = strip_y + .5*strip_dy
+    strip_dx = strip_dx / 2
     strip_dx2 = strip_dx2 / 2
-    strip_dy = strip_dy / 2
+    strip_dy = strip_dy /  2
     strip_dy2 = strip_dy2 / 2
     
     // Add annotations
@@ -182,10 +198,8 @@ for (annotation in secondary){
     for (int i = 0; i < SPOTS_PER_SIDE; i++) {
         double strip_originX = strip_x + strip_dx*i
         double strip_originY = strip_y + strip_dy*i
-        if (i != 0) {
-            strip_originY = strip_y + strip_dy*2*i //strip_originY * 2
-        }
-        last_y = strip_originY
+        strip_originY = strip_originY + i*strip_dy
+        strip_originX = strip_originX + i*strip_dx
         def strip_polygon = ROIs.createPolygonROI(
             [strip_originX, 
             strip_originX+strip_dx, 
@@ -235,6 +249,8 @@ for (classname in nonspotClasses) {
         idx = idx + 1
     }
 }
+
+return
 
 /*
 we need to store annotation objects' column IDs for the matrix's reference
@@ -335,7 +351,7 @@ for (int i = 0; i < retarr.length; i++) {
                 }
                 else {
                     output_matx.append(Float.toString(retarr[i][j]) + ",");
-                }
+                }s
             }
         }
         matx_rowname_idx = matx_rowname_idx + 1
