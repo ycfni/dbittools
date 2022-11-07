@@ -26,7 +26,7 @@ CSV_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/inter
 MATX_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections_matx.txt'
 
 // # spots desired per dimension in DBiT area square
-int SPOTS_PER_SIDE = 50
+int SPOTS_PER_SIDE = 5
 
 // CLASS LABELS
 //DBiT area should be a square (shift + draw rectangle obj) of any rotation
@@ -80,6 +80,35 @@ if (points.size() != 4) {
     return
 }
 
+
+public static int indexOfSmallest(ArrayList array){
+
+    // add this
+    if (array.size == 0)
+        return -1;
+
+    int index = 0;
+    int min = array[index];
+
+    for (int i = 1; i < array.size; i++){
+        if (array[i] <= min){
+        min = array[i];
+        index = i;
+        }
+    }
+    return index;
+}
+
+dist_orig = []
+for(var i = 0; i < points.size(); i++){
+   a = Math.pow(points.x[i],2) + Math.pow(points.y[i],2)
+   dist_orig.add(Math.sqrt(a))
+}
+pointClosestToOrigin = indexOfSmallest(dist_orig)
+
+
+
+
 // Get the side lengths
 double d1 = points[1].distance(points[0])
 double d2 = points[2].distance(points[1])
@@ -97,10 +126,13 @@ if (Math.abs(d1 - d3) > eps || Math.abs(d4 - d2) > eps) {
 
 
 // Determination of where to begin slicing
-int ind = 0
-if (d1 < d2) {
+int ind = pointClosestToOrigin 
+println(points)
+println(ind)
+/*if (d1 < d2) {
     points.add(0, points.remove(3))
 }
+*/
 double x = points[ind].x
 double y = points[ind].y
 double dx = (points[ind+1].x - x) / SPOTS_PER_SIDE
@@ -163,6 +195,8 @@ for (annotation in secondary){
         return
     }
     
+    println(stripPoints)
+    
     // Get the side lengths
     double stripD1 = stripPoints[1].distance(stripPoints[0])
     double stripD2 = stripPoints[2].distance(stripPoints[1])
@@ -214,7 +248,7 @@ for (annotation in secondary){
         def strip_newAnnotation = PathObjects.createAnnotationObject(strip_polygon)
         strip_newAnnotation.setPathClass(SPOT_LABEL)
         //name the spot w/ AxB convention for matrix utility & orientation clarity
-        strip_newAnnotation.setName("${stripCount} x ${i}")
+        strip_newAnnotation.setName("${stripCount+1} x ${SPOTS_PER_SIDE-i}")
         smallSquareAnnotations << strip_newAnnotation
     }
     stripCount = stripCount + 1
