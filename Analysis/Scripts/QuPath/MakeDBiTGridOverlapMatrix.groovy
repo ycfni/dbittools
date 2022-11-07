@@ -20,10 +20,22 @@ import qupath.lib.objects.classes.PathClassFactory
 import qupath.lib.scripting.QP
 
 // PATHS
+def PROJECT_BASE_DIR = "/Users/mmd47/Dropbox/Yale/David Hafler Lab/GBM_TIGIT_Project/DBiT-seq_data/GridImages_005/"
+def ImageFileName = GeneralTools.getNameWithoutExtension(getCurrentImageData().getServer().getMetadata().getName())
+pathOutput = buildFilePath(PROJECT_BASE_DIR, ImageFileName, 'Annotations')
+mkdirs(pathOutput)
+println("Output will be saved to $pathOutput")
+
+
+
+// -------------------------------------------------------------
+// Main OUTPUT file:
+MATX_PATH = buildFilePath(pathOutput, 'intersections_matx.txt')
+
 //optional csv of "Intersection of OBJ with SPOT: X.XX" format to assist review of matx
-CSV_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections.csv'
-//final comma-separated matrix in .txt format for downstream ingestion as obs columns
-MATX_PATH = '/Users/sydneyzink/Desktop/yale/projects/qupath_projects/output/intersections_matx.txt'
+CSV_PATH = buildFilePath(pathOutput, 'intersections.csv')
+
+
 
 // # spots desired per dimension in DBiT area square
 int SPOTS_PER_SIDE = 5
@@ -127,8 +139,7 @@ if (Math.abs(d1 - d3) > eps || Math.abs(d4 - d2) > eps) {
 
 // Determination of where to begin slicing
 int ind = pointClosestToOrigin 
-println(points)
-println(ind)
+
 /*if (d1 < d2) {
     points.add(0, points.remove(3))
 }
@@ -195,8 +206,6 @@ for (annotation in secondary){
         return
     }
     
-    println(stripPoints)
-    
     // Get the side lengths
     double stripD1 = stripPoints[1].distance(stripPoints[0])
     double stripD2 = stripPoints[2].distance(stripPoints[1])
@@ -255,6 +264,8 @@ for (annotation in secondary){
 
 }
 
+
+
 //we no longer need the strip intermediate annotations
 removeObjects(annotations, true)
 //though we do need to add the spot annotations
@@ -284,7 +295,6 @@ for (classname in nonspotClasses) {
     }
 }
 
-return
 
 /*
 we need to store annotation objects' column IDs for the matrix's reference
@@ -311,7 +321,7 @@ new File(CSV_PATH).withWriter { fw ->
        for (int j = 0; j < SPOTS_PER_SIDE; j++) {
            nonSpots.each() {
                //first object is the spot in question
-               ann01 = getAnnotationObjects().find { it.getName() == "${i} x ${j}"}
+               ann01 = getAnnotationObjects().find { it.getName() == "${i+1} x ${j+1}"}
                matx_rownames << "${i}x${j}"
                //second object is the (non-spot, non-DBiT rectangle) annotation in question
                ann02 = it
@@ -393,5 +403,6 @@ for (int i = 0; i < retarr.length; i++) {
     }
 }
 
+println("Wrote $MATX_PATH")
 println("done")
 

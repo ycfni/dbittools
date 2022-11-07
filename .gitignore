@@ -1,6 +1,9 @@
 # Any folder in the project tree called 'data' is ignored
 data
 
+# Scratch md files
+*md00*
+
 # Any folder in the project tree called 'ReferenceFiles' is ignored
 ReferenceFiles
 
