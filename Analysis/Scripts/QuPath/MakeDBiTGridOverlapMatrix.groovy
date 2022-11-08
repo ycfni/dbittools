@@ -38,7 +38,7 @@ CSV_PATH = buildFilePath(pathOutput, 'intersections.csv')
 
 
 // # spots desired per dimension in DBiT area square
-int SPOTS_PER_SIDE = 5
+int SPOTS_PER_SIDE = 50
 
 // CLASS LABELS
 //DBiT area should be a square (shift + draw rectangle obj) of any rotation
