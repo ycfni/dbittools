@@ -1,5 +1,5 @@
 # read_dbit
-Loads DBit data from a standardized directory structure into [AnnData](https://anndata.readthedocs.io/en/latest/) objects
+Loads DBiT data from a standardized directory structure into [AnnData](https://anndata.readthedocs.io/en/latest/) objects
 
 
 This is the directory structure for a single DBiT-seq sample for import into python as an AnnData object.
