@@ -20,7 +20,8 @@ import qupath.lib.objects.classes.PathClassFactory
 import qupath.lib.scripting.QP
 
 // PATHS
-def PROJECT_BASE_DIR = "/Users/mmd47/Dropbox/Yale/David Hafler Lab/GBM_TIGIT_Project/DBiT-seq_data/GridImages_005/"
+def PROJECT_BASE_DIR = "/Users/sydneyzink/Downloads/GridImages_005"
+//def PROJECT_BASE_DIR = "/Users/mmd47/Dropbox/Yale/David Hafler Lab/GBM_TIGIT_Project/DBiT-seq_data/GridImages_005/"
 def ImageFileName = GeneralTools.getNameWithoutExtension(getCurrentImageData().getServer().getMetadata().getName())
 pathOutput = buildFilePath(PROJECT_BASE_DIR, ImageFileName, 'Annotations')
 mkdirs(pathOutput)
@@ -322,7 +323,7 @@ new File(CSV_PATH).withWriter { fw ->
            nonSpots.each() {
                //first object is the spot in question
                ann01 = getAnnotationObjects().find { it.getName() == "${i+1} x ${j+1}"}
-               matx_rownames << "${i}x${j}"
+               matx_rownames << "${i+1}x${j+1}"
                //second object is the (non-spot, non-DBiT rectangle) annotation in question
                ann02 = it
                 
@@ -395,7 +396,7 @@ for (int i = 0; i < retarr.length; i++) {
                 }
                 else {
                     output_matx.append(Float.toString(retarr[i][j]) + ",");
-                }s
+                }
             }
         }
         matx_rowname_idx = matx_rowname_idx + 1
