@@ -96,12 +96,6 @@ def read_dbit(
 
     adata.uns["spatial"] = dict()
 
-#     from h5py import File
-#     with File(path / count_file, mode="r") as f:
-#         attrs = dict(f.attrs)
-#     if library_id is None:
-#    library_id = str(attrs.pop("library_ids")[0], "utf-8")
-
     attrs = {"chemistry_description": "Spatial 3' v1", "software_version": "dbitranger-1.1.0"}
 
     adata.uns["spatial"][library_id] = dict()
@@ -113,6 +107,7 @@ def read_dbit(
             hires_image=path / 'spatial/tissue_hires_image.png',
             lowres_image=path / 'spatial/tissue_lowres_image.png',
             tissue_mask=path / 'spatial/masks/tissue_hires_in_tissue_mask.png',
+            intersection_matx=path / 'spatial/intersections_matx.txt',
         )
 
         # check if files exists, continue if images are missing
@@ -165,26 +160,43 @@ def read_dbit(
         # Check if tissue_positions_file exists, and build one if it doesn't.
 
         if not os.path.exists(files['tissue_positions_file']):
-            tmi = None
-            if os.path.exists(files['tissue_mask']):
-                # If there is a tissue mask file, use this to populate the 'in_tissue' column of the position list file
-                tmi = files['tissue_mask']
-            pl = buildpositionlist(count_file=os.path.join(path,count_file), imfile=files['hires_image'], tissuemask_imfile=tmi)
+            pl = buildpositionlist(count_file=os.path.join(path,count_file), imfile=files['hires_image'])
             pl.to_csv(files['tissue_positions_file'], header=False)
-            print('No position list file found (should be at \'spatial/tissue_positions_list.csv\'); Building one now.')
-            
+            print('No position list file found (should be at \'spatial/tissue_positions_list.csv\'); Building one now.') 
+
         positions = pd.read_csv(files['tissue_positions_file'], header=None)
-        positions.columns = [
+        
+        colnames = None
+        if len(positions.columns) == 5:
+            colnames = [
+            'barcode',
+            'array_row',
+            'array_col',
+            'pxl_col_in_fullres',
+            'pxl_row_in_fullres',
+            ]
+        else:
+            colnames = [
             'barcode',
             'in_tissue',
             'array_row',
             'array_col',
             'pxl_col_in_fullres',
             'pxl_row_in_fullres',
-        ]
+            ]
+            
+        positions.columns = colnames
+
         positions.index = positions['barcode']
 
         adata.obs = adata.obs.join(positions, how="left")
+        
+        #don't keep in_tissue from positions file since we choose in the next step how to source it
+        if "in_tissue" in adata.obs:
+            adata.obs = adata.obs.drop("in_tissue", axis=1)
+
+        #add in_tissue col if not already present in positions list
+        adata = addintissue(adata, os.path.join(path,count_file), files['intersection_matx'], files['tissue_positions_file'], files['tissue_mask'])
 
         adata.obsm['spatial'] = adata.obs[
             ['pxl_row_in_fullres', 'pxl_col_in_fullres']
@@ -193,7 +205,11 @@ def read_dbit(
             columns=['barcode', 'pxl_row_in_fullres', 'pxl_col_in_fullres'],
             inplace=True,
         )
-
+        
+        #add any other intersections matx columns to adata.obs aside from in_tissue (done earlier)
+        if os.path.exists(files['intersection_matx']):
+            adata = addintersections(adata, os.path.join(path,count_file), files['intersection_matx'])
+            
         # put image path in uns
         if source_image_path is not None:
             # get an absolute path
@@ -204,8 +220,104 @@ def read_dbit(
 
     return adata
 
+def addintersections(adata, count_file=None, intersection_matx_file=None):
+    #add any other (not in_tissue) annotation overlaps as cols to anndata.obs
+    
+    counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
+    rownames = counts.index
+        
+    intersections_df = pd.read_csv(os.path.join(path,intersection_matx_file), sep=',', header=0, index_col=0)
+        
+    #only keep intersections_df entries with barcodes present in position_list barcodes
+    intersections_df = intersections_df[intersections_df.index.isin(rownames)]
 
-def buildpositionlist(count_file=None, imfile=None, tissuemask_imfile=None):
+    #the barcodes in position_list won't necessarily be in the same order, though
+    intersections_df = intersections_df.reindex(counts.index)
+    
+    #add all remaining matx cols to the left of the existing adata cols
+    intersections_df = intersections_df.drop("in_tissue", axis=1)
+    
+    adata.obs = pd.concat([intersections_df, adata.obs], axis=1)
+    #for col in intersections_df.columns:
+    #    adata.obs = adata.obs.join(intersections_df[[col]], how="left")
+        
+    return adata
+
+def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_positions_file=None, tissuemask_imfile=None):
+    #figure out which of the three options is available:
+    #intersections matx file exists, tissue mask png exists, in_tissue col in positions file
+    
+    counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
+    rownames = counts.index
+    
+    tissueposns_df = pd.read_csv(os.path.join(path,tissue_positions_file), sep=',', header=None, index_col=0)
+    #only keep intersections_df entries with barcodes present in position_list barcodes
+    tissueposns_df = tissueposns_df[tissueposns_df.index.isin(rownames)]
+    #the barcodes in position_list won't necessarily be in the same order, thou
+    tissueposns_df = tissueposns_df.reindex(counts.index)
+
+    available = []
+    for f in [intersection_matx_file, tissue_positions_file, tissuemask_imfile]:
+        if f == tissue_positions_file:
+            #only include the positions file if it already has the in_tissue column to source from
+            if not np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
+                continue
+        if f is not None:
+            available.append(f.name.split("/")[-1])
+    
+    #prompt user if a choice among a subset of the 3 exists, log choice
+    #else skip prompt, log the forced choice (1 option exists) or default (no options)
+    file_to_use = None
+    if len(available) > 1:
+        available_as_str = ", ".join(available)
+        file_to_use = input("Which file do you want to use for in_tissue column creation? These are your choices: " + available_as_str)
+    elif len(available) == 1:
+        file_to_use = available[0]
+    else:
+        in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0]))))
+        adata.obs = adata.obs.join(in_tissue_series, how="left")
+        return adata
+
+    #if we're here, we either had a choice or a forced choice (only 1 file available of the 3)
+    if file_to_use == "tissue_positions_list.csv":
+        #use tissue positions file
+        
+        if np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
+            if "in_tissue" not in adata.obs:
+                tissueposns_df.rename(columns={1: "in_tissue"}, inplace=True)
+                adata.obs = adata.obs.join(tissueposns_df[["in_tissue"]], how="left")
+        return adata
+    elif file_to_use == "intersections_matx.txt":
+        #use intersections matx file
+        
+        intersections_df = pd.read_csv(os.path.join(path,intersection_matx_file), sep=',', header=0, index_col=0)
+        
+        #only keep intersections_df entries with barcodes present in position_list barcodes
+        intersections_df = intersections_df[intersections_df.index.isin(rownames)]
+
+        #the barcodes in position_list won't necessarily be in the same order, though
+        intersections_df = intersections_df.reindex(counts.index)
+        
+        #if any proportion over overlap exists, mark True for in_tissue (ceil proportion to 1)
+        #easier: mark False (0) if val != 0 is False, so all non-zeroes are 1 and all zeroes are 0
+        rounded_vals = pd.DataFrame(index=counts.index, columns=["in_tissue"])
+        rounded_vals["in_tissue"] = (intersections_df["in_tissue"] != 0.0).astype(int)
+        adata.obs = adata.obs.join(rounded_vals[["in_tissue"]], how="left")
+        
+        return adata
+    elif file_to_use == "tissue_hires_in_tissue_mask.png":
+        #use tissue mask file
+        
+        mask = io.imread(tissuemask_imfile, as_gray=True)
+        mask_vals = pd.DataFrame(index=tissueposns_df.index)
+        mask_vals["in_tissue"] = [int(mask[coords[0],coords[1]]>0.5) for coords in tissueposns_df.iloc[: , -2:].to_numpy()]
+        adata.obs = adata.obs.join(mask_vals[["in_tissue"]], how="left")
+        
+        return adata
+    else:
+        raise "The filename is not recognized as a valid option among the 3 choices (positions, intersections, mask)"
+
+def buildpositionlist(count_file=None, imfile=None):
     # load the image
     im = imread(imfile)
 
@@ -233,13 +345,11 @@ def buildpositionlist(count_file=None, imfile=None, tissuemask_imfile=None):
     position_list = pd.DataFrame(test, index=rownames, columns=['DBiT_pixel_A','DBiT_pixel_B'])
     position_list['x'] = np.short(np.round(position_list['DBiT_pixel_A']*w1*2 + w2))
     position_list['y'] = np.short(np.round(position_list['DBiT_pixel_B']*l1*2 + l2))
-    if (tissuemask_imfile is not None):
-        mask = io.imread(tissuemask_imfile, as_gray=True)
-        position_list['in_tissue'] = [int(mask[coords[0],coords[1]]>0.5) for coords in position_list[['x','y']].to_numpy()]
-    else:
-        position_list['in_tissue'] = np.short(np.ones(np.shape(rownames)))
 
-    position_list = position_list[['in_tissue','DBiT_pixel_A','DBiT_pixel_B','x','y']]
+    #position_list = position_list[['DBiT_pixel_A','DBiT_pixel_B','x','y']]
+        
+    position_list['barcode'] = position_list.index
+    position_list = position_list[['DBiT_pixel_A','DBiT_pixel_B','x','y']]
         
     position_list_out = position_list.sort_values(by=['DBiT_pixel_A','DBiT_pixel_B'], ascending=[True, True])
     
