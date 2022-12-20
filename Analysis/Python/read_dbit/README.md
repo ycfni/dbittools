@@ -27,13 +27,18 @@ Sample_ID
 |	| missing_channels.txt
 |	
 |_______raw_image_data
+|	|
+|	| 4x_DBiT_TissueProfile_NoCHIP.tif
+|	| 4x_DBiT_TissueProfile_CHIP1.tif
+|	| 4x_DBiT_TissueProfile_CHIP2.tif
+|	| 10x_HandE_WholeSlideImage.svs
+|	
+|_______raw_molecular_data
 	|
-	| 4x_DBiT_TissueProfile_NoCHIP.tif
-	| 4x_DBiT_TissueProfile_CHIP1.tif
-	| 4x_DBiT_TissueProfile_CHIP2.tif
-	| 10x_HandE_WholeSlideImage.svs
-
-
+	| S01_L01_R1.fastq
+	| S01_L01_R2.fastq
+	| S01_L01_I1.fastq
+	
 ```
 
 The main 'omics' data is in ``count_file.tsv``, a tab-delimited file of gene counts for each DBiT 'pixel' which has the following format:
