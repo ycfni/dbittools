@@ -35,9 +35,9 @@ Sample_ID
 |	
 |_______raw_molecular_data
 	|
-	| S01_L01_R1.fastq
-	| S01_L01_R2.fastq
-	| S01_L01_I1.fastq
+	| S01_L01_R1.fastq.gz
+	| S01_L01_R2.fastq.gz
+	| S01_L01_I1.fastq.gz
 	
 ```
 
