@@ -113,7 +113,7 @@ def read_dbit(
         # check if files exists, continue if images are missing
         for f in files.values():
             if not f.exists():
-                if any(x in str(f) for x in ["hires_image", "lowres_image"]):
+                if any(x in str(f) for x in ["hires_image", "lowres_image", "intersections"]):
                     warn(
                         f"You seem to be missing an image file.\n"
                         f"Could not find '{f}'."
@@ -226,7 +226,7 @@ def addintersections(adata, count_file=None, intersection_matx_file=None):
     counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
     rownames = counts.index
         
-    intersections_df = pd.read_csv(os.path.join(path,intersection_matx_file), sep=',', header=0, index_col=0)
+    intersections_df = pd.read_csv(intersection_matx_file, sep=',', header=0, index_col=0)
         
     #only keep intersections_df entries with barcodes present in position_list barcodes
     intersections_df = intersections_df[intersections_df.index.isin(rownames)]
@@ -250,7 +250,7 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
     counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
     rownames = counts.index
     
-    tissueposns_df = pd.read_csv(os.path.join(path,tissue_positions_file), sep=',', header=None, index_col=0)
+    tissueposns_df = pd.read_csv(tissue_positions_file, sep=',', header=None, index_col=0)
     #only keep intersections_df entries with barcodes present in position_list barcodes
     tissueposns_df = tissueposns_df[tissueposns_df.index.isin(rownames)]
     #the barcodes in position_list won't necessarily be in the same order, thou
