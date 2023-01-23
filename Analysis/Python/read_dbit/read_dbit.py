@@ -46,7 +46,7 @@ class read_dbit:
         Filter expression to genes within this genome.
     count_file
         Which file in the passed directory to use as the count file. Typically would be one of:
-        'filtered_feature_bc_matrix.h5' or 'raw_feature_bc_matrix.h5'.
+        counts.tsv, stdata.tsv, 'filtered_feature_bc_matrix.h5' or 'raw_feature_bc_matrix.h5'.
     library_id
         Identifier for the visium library. Can be modified when concatenating multiple adata objects.
     source_image_path
