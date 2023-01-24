@@ -1,6 +1,9 @@
 # Any folder in the project tree called 'data' is ignored
 data
 
+# Any folder in the project tree called 'tmp' is ignored
+tmp
+
 # Scratch md files
 *md00*
 
@@ -12,6 +15,10 @@ slurm*.out
 
 # Log files
 *.log
+
+# pycache
+__pycache__
+
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
