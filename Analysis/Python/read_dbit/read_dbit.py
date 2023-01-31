@@ -146,8 +146,8 @@ def read_dbit(
             # MMD temporary placeholder until I figure out what scale factors should be used for DBiT-seq
             adata.uns["spatial"][library_id]['scalefactors'] = {'fiducial_diameter_fullres': 288.25050000000005,
                                                                 'spot_diameter_fullres': 178.44077999999996,
-                                                                'tissue_hires_scalef': 3,
-                                                                'tissue_lowres_scalef': 3}
+                                                                'tissue_hires_scalef': 1.65, #3
+                                                                'tissue_lowres_scalef': 1.65} #3
 
         adata.uns["spatial"][library_id]["metadata"] = {
             k: (str(attrs[k], "utf-8") if isinstance(attrs[k], bytes) else attrs[k])
@@ -243,41 +243,7 @@ def addintersections(adata, count_file=None, intersection_matx_file=None):
         
     return adata
 
-def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_positions_file=None, tissuemask_imfile=None):
-    #figure out which of the three options is available:
-    #intersections matx file exists, tissue mask png exists, in_tissue col in positions file
-    
-    counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
-    rownames = counts.index
-    
-    tissueposns_df = pd.read_csv(tissue_positions_file, sep=',', header=None, index_col=0)
-    #only keep intersections_df entries with barcodes present in position_list barcodes
-    tissueposns_df = tissueposns_df[tissueposns_df.index.isin(rownames)]
-    #the barcodes in position_list won't necessarily be in the same order, thou
-    tissueposns_df = tissueposns_df.reindex(counts.index)
-
-    available = []
-    for f in [intersection_matx_file, tissue_positions_file, tissuemask_imfile]:
-        if f == tissue_positions_file:
-            #only include the positions file if it already has the in_tissue column to source from
-            if not np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
-                continue
-        if f is not None:
-            available.append(f.name.split("/")[-1])
-    
-    #prompt user if a choice among a subset of the 3 exists, log choice
-    #else skip prompt, log the forced choice (1 option exists) or default (no options)
-    file_to_use = None
-    if len(available) > 1:
-        available_as_str = ", ".join(available)
-        file_to_use = input("Which file do you want to use for in_tissue column creation? These are your choices: " + available_as_str)
-    elif len(available) == 1:
-        file_to_use = available[0]
-    else:
-        in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0]))))
-        adata.obs = adata.obs.join(in_tissue_series, how="left")
-        return adata
-
+def load_file(file_to_use):
     #if we're here, we either had a choice or a forced choice (only 1 file available of the 3)
     if file_to_use == "tissue_positions_list.csv":
         #use tissue positions file
@@ -316,6 +282,63 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
         return adata
     else:
         raise "The filename is not recognized as a valid option among the 3 choices (positions, intersections, mask)"
+
+def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_positions_file=None, tissuemask_imfile=None):
+    #figure out which of the three options is available:
+    #intersections matx file exists, tissue mask png exists, in_tissue col in positions file
+    
+    counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
+    rownames = counts.index
+    
+    tissueposns_df = pd.read_csv(tissue_positions_file, sep=',', header=None, index_col=0)
+    #only keep intersections_df entries with barcodes present in position_list barcodes
+    tissueposns_df = tissueposns_df[tissueposns_df.index.isin(rownames)]
+    #the barcodes in position_list won't necessarily be in the same order, thou
+    tissueposns_df = tissueposns_df.reindex(counts.index)
+
+    elif (tissuemask_imfile  intersection_matx_file):
+        mask = io.imread(tissuemask_imfile, as_gray=True)
+        mask_vals = pd.DataFrame(index=tissueposns_df.index)
+        mask_vals["in_tissue"] = [int(mask[coords[0],coords[1]]>0.5) for coords in tissueposns_df.iloc[: , -2:].to_numpy()]
+        adata.obs = adata.obs.join(mask_vals[["in_tissue"]], how="left")
+        
+        return adata
+
+
+    available = []
+    for f in [intersection_matx_file, tissue_positions_file, tissuemask_imfile]:
+        if f == tissue_positions_file:
+            #only include the positions file if it already has the in_tissue column to source from
+            if not np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
+                continue
+        if f is not None:
+            available.append(f.name.split("/")[-1])
+
+    #only give the user a choice between files if the positions_list file isn't available to use as the default
+    if "tissue_positions_list.csv" in available:
+        #use tissue positions file
+        
+        if np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
+            if "in_tissue" not in adata.obs:
+                tissueposns_df.rename(columns={1: "in_tissue"}, inplace=True)
+                adata.obs = adata.obs.join(tissueposns_df[["in_tissue"]], how="left")
+        return adata
+    else:
+        #prompt user if a choice among a subset of the 3 exists, log choice
+        #else skip prompt, log the forced choice (1 option exists) or default (no options)
+        file_to_use = None
+        if len(available) > 1:
+            available_as_str = ", ".join(available)
+            file_selected = input("Which file do you want to use for in_tissue column creation? These are your choices: " + available_as_str)
+            return load_file(file_to_use)
+        elif len(available) == 1:
+            file_selected = available[0]
+            return load_file(file_selected)
+        else:
+            in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0]))))
+            adata.obs = adata.obs.join(in_tissue_series, how="left")
+            return adata
+
 
 def buildpositionlist(count_file=None, imfile=None):
     # load the image
