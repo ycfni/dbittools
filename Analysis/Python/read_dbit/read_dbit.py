@@ -243,7 +243,7 @@ def addintersections(adata, count_file=None, intersection_matx_file=None):
         
     return adata
 
-def load_file(file_to_use, adata, count_file=None, intersection_matx_file=None, tissue_positions_file=None, tissuemask_imfile=None):
+def load_file(file_to_use, adata, count_file=None, intersection_matx_file=None, tissue_positions_file=None, tissuemask_imfile=None, tissueposns_df=None):
     #if we're here, we either had a choice or a forced choice (only 1 file available of the 3)
     if file_to_use == "tissue_positions_list.csv":
         #use tissue positions file
@@ -321,10 +321,10 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
         if len(available) > 1:
             available_as_str = ", ".join(available)
             file_selected = input("Which file do you want to use for in_tissue column creation? These are your choices: " + available_as_str)
-            return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile)
+            return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile, tissueposns_df)
         elif len(available) == 1:
             file_selected = available[0]
-            return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile)
+            return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile, tissueposns_df)
         else:
             in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0]))))
             adata.obs = adata.obs.join(in_tissue_series, how="left")
