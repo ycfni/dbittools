@@ -296,7 +296,6 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
     #the barcodes in position_list won't necessarily be in the same order, thou
     tissueposns_df = tissueposns_df.reindex(counts.index)
 
-
     available = []
     for f in [intersection_matx_file, tissue_positions_file, tissuemask_imfile]:
         if f == tissue_positions_file:
