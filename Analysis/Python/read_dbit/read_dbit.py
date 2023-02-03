@@ -317,11 +317,11 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
     else:
         #prompt user if a choice among a subset of the 3 exists, log choice
         #else skip prompt, log the forced choice (1 option exists) or default (no options)
-        file_to_use = None
+        file_selected = None
         if len(available) > 1:
             available_as_str = ", ".join(available)
             file_selected = input("Which file do you want to use for in_tissue column creation? These are your choices: " + available_as_str)
-            return load_file(file_to_use)
+            return load_file(file_selected)
         elif len(available) == 1:
             file_selected = available[0]
             return load_file(file_selected)
