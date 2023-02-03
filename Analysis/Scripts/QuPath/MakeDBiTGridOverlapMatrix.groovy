@@ -20,8 +20,6 @@ import qupath.lib.objects.classes.PathClassFactory
 import qupath.lib.scripting.QP
 
 // PATHS
-def PROJECT_BASE_DIR = "/Users/sydneyzink/Downloads/GridImages_005"
-//def PROJECT_BASE_DIR = "/Users/mmd47/Dropbox/Yale/David Hafler Lab/GBM_TIGIT_Project/DBiT-seq_data/GridImages_005/"
 def ImageFileName = GeneralTools.getNameWithoutExtension(getCurrentImageData().getServer().getMetadata().getName())
 pathOutput = buildFilePath(PROJECT_BASE_DIR, ImageFileName, 'Annotations')
 mkdirs(pathOutput)
@@ -97,13 +95,13 @@ if (points.size() != 4) {
 public static int indexOfSmallest(ArrayList array){
 
     // add this
-    if (array.size == 0)
+    if (array.size() == 0)
         return -1;
 
     int index = 0;
     int min = array[index];
 
-    for (int i = 1; i < array.size; i++){
+    for (int i = 1; i < array.size(); i++){
         if (array[i] <= min){
         min = array[i];
         index = i;
@@ -117,6 +115,7 @@ for(var i = 0; i < points.size(); i++){
    a = Math.pow(points.x[i],2) + Math.pow(points.y[i],2)
    dist_orig.add(Math.sqrt(a))
 }
+
 pointClosestToOrigin = indexOfSmallest(dist_orig)
 
 
