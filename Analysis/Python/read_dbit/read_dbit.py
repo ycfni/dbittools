@@ -111,8 +111,10 @@ def read_dbit(
         )
 
         # check if files exists, continue if images are missing
-        for f in files.values():
-            if not f.exists():
+        for key,val in files.items():
+            f = val
+            if not val.exists():
+                files[key] = None
                 if any(x in str(f) for x in ["hires_image", "lowres_image", "intersections"]):
                     warn(
                         f"You seem to be missing an image file.\n"
@@ -205,7 +207,7 @@ def read_dbit(
         )
         
         #add any other intersections matx columns to adata.obs aside from in_tissue (done earlier)
-        if os.path.exists(files['intersection_matx']):
+        if files['intersection_matx']:
             adata = addintersections(adata, os.path.join(path,count_file), files['intersection_matx'])
             
         # put image path in uns
@@ -324,7 +326,7 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
             file_selected = available[0]
             return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile, tissueposns_df)
         else:
-            in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0]))))
+            in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0])))).to_frame()
             adata.obs = adata.obs.join(in_tissue_series, how="left")
             return adata
 
