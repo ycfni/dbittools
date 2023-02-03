@@ -296,7 +296,7 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
     #the barcodes in position_list won't necessarily be in the same order, thou
     tissueposns_df = tissueposns_df.reindex(counts.index)
 
-    elif (tissuemask_imfile  intersection_matx_file):
+    elif (tissuemask_imfile or intersection_matx_file):
         mask = io.imread(tissuemask_imfile, as_gray=True)
         mask_vals = pd.DataFrame(index=tissueposns_df.index)
         mask_vals["in_tissue"] = [int(mask[coords[0],coords[1]]>0.5) for coords in tissueposns_df.iloc[: , -2:].to_numpy()]
