@@ -123,8 +123,6 @@ def read_dbit(
                         f"You seem to be missing the tissue position list file:.\n"
                         f"Could not find '{f}'. Don't worry, I'll build one for you."
                     )
-                else:
-                    raise OSError(f"Could not find required file '{f}'")
 
         adata.uns["spatial"][library_id]['images'] = dict()
         for res in ['hires', 'lowres']:
