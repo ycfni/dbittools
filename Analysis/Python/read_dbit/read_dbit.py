@@ -324,6 +324,7 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
             return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile, tissueposns_df)
         elif len(available) == 1:
             file_selected = available[0]
+            print("Using " + file_selected)
             return load_file(file_selected, adata, count_file, intersection_matx_file, tissue_positions_file, tissuemask_imfile, tissueposns_df)
         else:
             in_tissue_series = pd.Series(np.short(np.ones(np.shape(adata.shape[0])))).to_frame()
