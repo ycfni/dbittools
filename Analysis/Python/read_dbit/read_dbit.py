@@ -90,42 +90,42 @@ def read_dbit(
 ) -> AnnData:
     
     path = Path(path)
+
+    files = dict(
+        count_file=os.path.join(path,count_file),
+        tissue_positions_file=os.path.join(path,'spatial','tissue_positions_list.csv'),
+        scalefactors_json_file=os.path.join(path,'spatial','scalefactors_json.json'),
+        hires_image=os.path.join(path,'spatial','tissue_hires_image.png'),
+        lowres_image=os.path.join(path,'spatial','tissue_lowres_image.png'),
+        tissue_mask=os.path.join(path,'spatial','tissue_hires_in_tissue_mask.png'),
+        intersection_matx=os.path.join(path,'spatial','intersections_matx.txt'),
+    )
     
-    p = pd.read_csv(os.path.join(path,count_file), sep='\t', header=0, index_col=0)
+    p = pd.read_csv(files['count_file'], sep='\t', header=0, index_col=0)
     adata = AnnData(X=p, dtype=np.float32)
 
     adata.uns["spatial"] = dict()
-
     attrs = {"chemistry_description": "Spatial 3' v1", "software_version": "dbitranger-1.1.0"}
-
     adata.uns["spatial"][library_id] = dict()
 
     if load_images:
-        files = dict(
-            tissue_positions_file=path / 'spatial/tissue_positions_list.csv',
-            scalefactors_json_file=path / 'spatial/scalefactors_json.json',
-            hires_image=path / 'spatial/tissue_hires_image.png',
-            lowres_image=path / 'spatial/tissue_lowres_image.png',
-            tissue_mask=path / 'spatial/masks/tissue_hires_in_tissue_mask.png',
-            intersection_matx=path / 'spatial/intersections_matx.txt',
-        )
-
-        # check if files exists, continue if images are missing
+        # check if files exist, continue if images are missing, though
         for key,val in files.items():
-            f = val
-            if not val.exists():
+            if not os.path.exists(val):
                 files[key] = None
-                if any(x in str(f) for x in ["hires_image", "lowres_image", "intersections"]):
+                if key == 'count_file':
+                    raise OSError(f"You need a counts matrix file. I am looking for: " + val)
+                elif any(x in str(val) for x in ["hires_image", "lowres_image", "intersections"]):
                     warn(
                         f"You seem to be missing an image file.\n"
-                        f"Could not find '{f}'."
+                        f"Could not find '{val}'."
                     )
-                elif any(x in str(f) for x in ["tissue_positions"]):
+                elif any(x in str(val) for x in ["tissue_positions"]):
                     warn(
                         f"You seem to be missing the tissue position list file:.\n"
-                        f"Could not find '{f}'. Don't worry, I'll build one for you."
+                        f"Could not find '{val}'. Don't worry, I'll build one for you."
                     )
-
+                
         adata.uns["spatial"][library_id]['images'] = dict()
         for res in ['hires', 'lowres']:
             try:
@@ -191,12 +191,12 @@ def read_dbit(
 
         adata.obs = adata.obs.join(positions, how="left")
         
-        #don't keep in_tissue from positions file since we choose in the next step how to source it
+        #don't keep in_tissue col from positions file since we choose in the next step how to source it
         if "in_tissue" in adata.obs:
             adata.obs = adata.obs.drop("in_tissue", axis=1)
 
         #add in_tissue col if not already present in positions list
-        adata = addintissue(adata, os.path.join(path,count_file), files['intersection_matx'], files['tissue_positions_file'], files['tissue_mask'])
+        adata = addintissue(adata, files['count_file'], files['intersection_matx'], files['tissue_positions_file'], files['tissue_mask'])
 
         adata.obsm['spatial'] = adata.obs[
             ['pxl_row_in_fullres', 'pxl_col_in_fullres']
@@ -235,7 +235,8 @@ def addintersections(adata, count_file=None, intersection_matx_file=None):
     intersections_df = intersections_df.reindex(counts.index)
     
     #add all remaining matx cols to the left of the existing adata cols
-    intersections_df = intersections_df.drop("in_tissue", axis=1)
+    if 'in_tissue' in intersections_df.columns:
+        intersections_df = intersections_df.drop("in_tissue", axis=1)
     
     adata.obs = pd.concat([intersections_df, adata.obs], axis=1)
     #for col in intersections_df.columns:
@@ -255,20 +256,22 @@ def load_file(file_to_use, adata, count_file=None, intersection_matx_file=None, 
         return adata
     elif file_to_use == "intersections_matx.txt":
         #use intersections matx file
-        
-        intersections_df = pd.read_csv(os.path.join(path,intersection_matx_file), sep=',', header=0, index_col=0)
+        intersections_df = pd.read_csv(intersection_matx_file, sep=',', header=0, index_col=0)
         
         #only keep intersections_df entries with barcodes present in position_list barcodes
+        counts = pd.read_csv(count_file, sep='\t', header=0, index_col=0)
+        rownames = counts.index
         intersections_df = intersections_df[intersections_df.index.isin(rownames)]
 
         #the barcodes in position_list won't necessarily be in the same order, though
         intersections_df = intersections_df.reindex(counts.index)
-        
-        #if any proportion over overlap exists, mark True for in_tissue (ceil proportion to 1)
-        #easier: mark False (0) if val != 0 is False, so all non-zeroes are 1 and all zeroes are 0
-        rounded_vals = pd.DataFrame(index=counts.index, columns=["in_tissue"])
-        rounded_vals["in_tissue"] = (intersections_df["in_tissue"] != 0.0).astype(int)
-        adata.obs = adata.obs.join(rounded_vals[["in_tissue"]], how="left")
+
+        if 'in_tissue' in intersections_df.columns:
+            #if any proportion over overlap exists, mark True for in_tissue (ceil proportion to 1)
+            #easier: mark False (0) if val != 0 is False, so all non-zeroes are 1 and all zeroes are 0
+            rounded_vals = pd.DataFrame(index=counts.index, columns=["in_tissue"])
+            rounded_vals["in_tissue"] = (intersections_df["in_tissue"] != 0.0).astype(int)
+            adata.obs = adata.obs.join(rounded_vals[["in_tissue"]], how="left")
         
         return adata
     elif file_to_use == "tissue_hires_in_tissue_mask.png":
@@ -298,12 +301,13 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
 
     available = []
     for f in [intersection_matx_file, tissue_positions_file, tissuemask_imfile]:
+        print(f)
         if f == tissue_positions_file:
             #only include the positions file if it already has the in_tissue column to source from
             if not np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
                 continue
         if f is not None:
-            available.append(f.name.split("/")[-1])
+            available.append(f.split("/")[-1])
 
     #only give the user a choice between files if the positions_list file isn't available to use as the default
     if "tissue_positions_list.csv" in available:
