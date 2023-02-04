@@ -322,7 +322,7 @@ new File(CSV_PATH).withWriter { fw ->
            nonSpots.each() {
                //first object is the spot in question
                ann01 = getAnnotationObjects().find { it.getName() == "${i+1} x ${j+1}"}
-               matx_rownames << "${i+1}x${j+1}"
+               matx_rownames << "${j+1}x${i+1}"
                //second object is the (non-spot, non-DBiT rectangle) annotation in question
                ann02 = it
                 
@@ -356,7 +356,7 @@ new File(CSV_PATH).withWriter { fw ->
                    //but only create intersection annotation objects if overlap exists
                    if (cellval > 0){
                        intersect_annotation = PathObjects.createAnnotationObject(intersect_roi)
-                       intersect_annotation.setName("Intersection of ${ann02Name} with ${i} x ${j}")
+                       intersect_annotation.setName("Intersection of ${ann02Name} with ${j} x ${i}")
                        intersect_annotation.setPathClass(INTERSECTION_LABEL)
                    
                        hierarchy.addPathObject(intersect_annotation) 
