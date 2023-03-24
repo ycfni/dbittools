@@ -83,7 +83,7 @@ def read_dbit(
         path: Union[str, Path],
         genome: Optional[str] = None,
         *,
-        count_file: str = "filtered_feature_bc_matrix.h5",
+        count_file: str = "stdata.tsv",
         library_id: str = None,
         load_images: Optional[bool] = True,
         source_image_path: Optional[Union[str, Path]] = None,
