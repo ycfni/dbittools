@@ -32,4 +32,35 @@ dbittools
 
 ```
 
+Complete the directory setup with:
+
+```
+mkdir data
+mkdir data/MY_SAMPLE
+mkdir data/MY_SAMPLE/raw
+mkdir data/MY_SAMPLE/processed
+mkdir ReferenceFiles
+```
+
+(For details for the structure of the file directory for each sample (e.g. MY_SAMPLE), see [Sample_Folder_Structure.md](Docs/Sample_Folder_Structure.md)
+
+- To run from raw data you need to get [st_pipeline](https://github.com/jfnavarro/st_pipeline) installed.  See [Analysis/Environment.txt](Analysis/Environment.txt).
+
+     - [st_pipeline usage manual](https://htmlpreview.github.io/?https://raw.githubusercontent.com/jfnavarro/st_pipeline/master/docs/manual.html)
+
+- Then you need to build a reference for [STAR aligner](https://github.com/alexdobin/STAR). See [Analysis/Scripts/BuildSTARreference.sh](Analysis/Scripts/BuildSTARreference.sh).
+
+- Put your raw ``*.fastq.gz`` files in ``data/raw``.  
+
+- Read 2 from the DBiT experiments needs to be preprocessed with ``Analysis/Python/fastq_process.py``:
+
+    ```
+    python Analysis/Python/fastq_process.py -i data/raw/MyFastqFile_R2.fastq.gz
+    ```
+
+- Run st_pipeline with
+
+   ```
+   sbatch Analysis/Scripts/stpipeline_submit.sh
+   ```
 
