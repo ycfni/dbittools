@@ -42,7 +42,7 @@ mkdir data/MY_SAMPLE/processed
 mkdir ReferenceFiles
 ```
 
-(For details for the structure of the file directory for each sample (e.g. MY_SAMPLE), see [Sample_Folder_Structure.md](Docs/Sample_Folder_Structure.md)
+For details for the structure of the file directory for each sample (e.g. MY_SAMPLE), see [Sample_Folder_Structure.md](Docs/Sample_Folder_Structure.md)
 
 - To run from raw data you need to get [st_pipeline](https://github.com/jfnavarro/st_pipeline) installed.  See [Analysis/Environment.txt](Analysis/Environment.txt).
 
