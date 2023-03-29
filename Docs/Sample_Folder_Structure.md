@@ -13,10 +13,10 @@ SAMPLE_ID
 |                         |_(Whole Slide Images)
 |                         |_(etc.)
 |_______processed
-|                |__molecular
+|                |_molecular
 |                |          |_counts.tsv (output of st_pipeline)
 |                | 
-|                |__spatial
+|                |_spatial
 |                         |
 |                         |_tissue_hires_image.png
 |                         |_tissue_lowres_image.png
