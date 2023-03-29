@@ -6,11 +6,9 @@ SAMPLE_ID
 |
 |_______raw
 |         |_raw_molecular_data
-|         |                   |
 |         |                   |_*.fastq.gz files, etc.
 |         |
 |         |_raw_image_data
-|                         |
 |                         |_*.TIFF files
 |                         |_(Whole Slide Images)
 |                         |_(etc.)
