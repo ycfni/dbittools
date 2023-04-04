@@ -42,6 +42,7 @@ In summary, your credentials.json file should not be in the Github repository by
 
 ```
 {
+"email": "my_email@anydomain.example"
 "host" : "ftp://usftp21.novogene.com",
 "host_user" : "FILL_EMAILED_USER_ID",
 "host_password" : "FILL_EMAILED_PASSWORD"
