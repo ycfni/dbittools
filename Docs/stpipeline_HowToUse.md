@@ -38,6 +38,16 @@ Upon receiving an email from Novogene about your data being ready, which should 
 
 Only the credentials.json file is required to run the first 01_fetch_novogene_ftp.sh script that will download our data. Once that data is downloaded, we move on to populate the config.json file with some fields being dependent upon this first script having already been run.
 
+In summary, your credentials.json file should not be in the Github repository by nature of its content, but an example of the full file you can create on your own would be the following. Note that only the right-hand side's values are examples, whereas the left-hand side of each colon contains requisitely consistent keys you should not change the names of and should copy into your own file verbatim:
+
+```
+{
+"host" : "ftp://usftp21.novogene.com",
+"host_user" : "FILL_EMAILED_USER_ID",
+"host_password" : "FILL_EMAILED_PASSWORD"
+}
+```
+
 2. CONFIG.JSON
 
 02_BuildSTARreference.sh will put together the gene reference files that st_pipeline requires. To the right side of each of these fields, we need to replace "reference_files_folder_name" and "genome_folder_path" if not using the prepopulated (per the original repository configuration file) defaults of hg38_STAR and /gpfs/ycga/datasets/genomes/Homo_sapiens/NCBI/GRCh38/ respectively.
