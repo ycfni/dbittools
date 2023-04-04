@@ -11,6 +11,7 @@
 
 "barcodes_file": "Library/spatial_barcodes_index_1_50.txt",
 "output_relative_path": "A22-1834_slide3/processed/",
-"experiment_name": "ONH_A22-1834_S3"
+"experiment_name": "ONH_A22-1834_S3",
+"alt_experiment_name": "A22-1834_slide3"
 
 }
