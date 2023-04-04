@@ -1,0 +1,16 @@
+{
+
+"email": "sydney.zink@yale.edu",
+
+"reference_files_folder_name" : "hg38_STAR",
+"genome_folder_path": "/gpfs/ycga/datasets/genomes/Homo_sapiens/NCBI/GRCh38/",
+
+"conda_environment_name": "stpipeline",
+"fastq_FW":  "A22-1834_slide3/raw/usftp21.novogene.com/01.RawData/A221834_ON2/A221834_ON2_CKDL230007519-1A_H3NY2DSX7_L2_2.fq.gz",
+"fastq_RV": "A22-1834_slide3/raw/usftp21.novogene.com/01.RawData/A221834_ON2/A221834_ON2_CKDL230007519-1A_H3NY2DSX7_L2_1.fq.gz",
+
+"barcodes_file": "Library/spatial_barcodes_index_1_50.txt",
+"output_relative_path": "A22-1834_slide3/processed/",
+"experiment_name": "ONH_A22-1834_S3"
+
+}
