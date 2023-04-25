@@ -12,5 +12,7 @@ HOST=$(jq '.host' credentials.json)
 USER=$(jq '.host_user' credentials.json)
 PASSWORD=$(jq '.host_password' credentials.json)
 
-wget -r --user=$USER --password=$PASSWORD $HOST
+mkdir -p $(jq '.data_folder' config.json)/$(jq '.experiment_name' config.json)/raw/raw_molecular_data
+
+wget -r --user=$USER --password=$PASSWORD $HOST -P $(jq '.data_folder' config.json)/$(jq '.experiment_name' config.json)/raw/raw_molecular_data/
 
