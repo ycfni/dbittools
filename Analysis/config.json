@@ -14,4 +14,15 @@
 "data_folder": "/gpfs/gibbs/pi/b_hafler/OpticNerveHead_DBiT/data",
 "experiment_name": "ONH_A22-1834_S3",
 
+"THE FOLLOWING ARE READ_DBIT ARGUMENTS": "AND QUPATH ARGUMENTS",
+"fiducial_diameter_fullres": "288.25050000000005",
+"spot_diameter_fullres": "178.44077999999996",
+"tissue_hires_scalef": "1.65",
+"tissue_lowres_scalef": "1.65",
+"nChannels_horiz": "50",
+"nChannels_vert": "50",
+"channel_size_horiz": "25",
+"channel_size_vert": "25",
+"interchannel_space_horiz": "25",
+"interchannel_space_vert": "25"
 }

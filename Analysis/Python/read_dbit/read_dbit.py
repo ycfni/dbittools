@@ -94,7 +94,7 @@ def read_dbit(
     files = dict(
         count_file=os.path.join(path,count_file),
         tissue_positions_file=os.path.join(path,'spatial','tissue_positions_list.csv'),
-        scalefactors_json_file=os.path.join(path,'spatial','scalefactors_json.json'),
+        config_file='../../config.json',
         hires_image=os.path.join(path,'spatial','tissue_hires_image.png'),
         lowres_image=os.path.join(path,'spatial','tissue_lowres_image.png'),
         tissue_mask=os.path.join(path,'spatial','tissue_hires_in_tissue_mask.png'),
@@ -137,11 +137,36 @@ def read_dbit(
                 image_in = np.repeat(image_in[:, :, np.newaxis], 3, axis=2)
             adata.uns["spatial"][library_id]['images'][res] = image_in
 
+
+        config_dict = json.loads(files['config_file'])
+        self.config_dict = config_dict
+
+        numeric_config_keys = ["nChannels_horiz", "nChannels_vert", "channel_size_horiz", 
+                                "channel_size_vert", "interchannel_space_horiz", 
+                                "interchannel_space_vert", 'fiducial_diameter_fullres', 
+                                'spot_diameter_fullres', 'tissue_hires_scalef', 'tissue_lowres_scalef']
+        for key in numeric_config_keys:
+            config_dict[key] = float(config_dict[key])
+
+        self.nChannels_horiz = config_dict["nChannels_horiz"] #50
+        self.nChannels_vert = config_dict["nChannels_vert"] #50
+        self.channel_size_horiz = config_dict["channel_size_horiz"] #25
+        self.channel_size_vert = config_dict["channel_size_vert"] #25
+        self.interchannel_space_horiz = config_dict["interchannel_space_horiz"] #25
+        self.interchannel_space_vert = config_dict["interchannel_space_vert"] #25
+
+        #For 'spot_diameter_fullres', use diagonal of rectangle
+        spot_diameter_fullres = np.sqrt(self.channel_size_horiz^2 + self.self.channel_size_vert^2)
+
         # read json scalefactors
         try:
-            adata.uns["spatial"][library_id]['scalefactors'] = json.loads(
-                files['scalefactors_json_file'].read_bytes()
-            )
+            scalefactors_dict = {'fiducial_diameter_fullres': config_dict['fiducial_diameter_fullres'], 
+                                                                         'spot_diameter_fullres': spot_diameter_fullres,
+                                                                         'tissue_hires_scalef': config_dict['tissue_hires_scalef'],
+                                                                         'tissue_lowres_scalef': config_dict['tissue_lowres_scalef']}                                        
+            
+            adata.uns["spatial"][library_id]['scalefactors'] = scalefactors_dict
+            #adata.uns["spatial"][library_id]['scalefactors'] = json.loads(files['config_file'].read_bytes())
         except Exception:
             # MMD temporary placeholder until I figure out what scale factors should be used for DBiT-seq
             adata.uns["spatial"][library_id]['scalefactors'] = {'fiducial_diameter_fullres': 288.25050000000005,
