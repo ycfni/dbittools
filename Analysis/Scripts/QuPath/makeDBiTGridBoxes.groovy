@@ -272,7 +272,8 @@ def PP3 = IntStream.range(0, Nboxx * Nboxy).mapToObj { [PPx3[it], PPy3[it]] }.to
 def PP4 = IntStream.range(0, Nboxx * Nboxy).mapToObj { [PPx4[it], PPy4[it]] }.toArray()
 
 def patches = []
-def name = 1
+def ind_horiz = 1
+def ind_vert = 1
 for (a in [PP1, PP3, PP4, PP2].transpose().collect { [it[0], it[1], it[2], it[3]] }) {
 
     w1 = a[0][0] / cal.getAveragedPixelSize()
@@ -293,9 +294,18 @@ for (a in [PP1, PP3, PP4, PP2].transpose().collect { [it[0], it[1], it[2], it[3]
     def spotannot = PathObjects.createAnnotationObject(spotpoly)
     spotannot.setPathClass(SPOT_LABEL)
     //name the spot w/ AxB convention for matrix utility & orientation clarity
-    spotannot.setName("${name}")
+   
+    spotannot.setName("${ind_horiz} x ${ind_vert}")
+    
     patches << spotannot
-    name += 1
+
+    ind_vert += 1
+    if (ind_vert % nChannels_horiz == 1) {
+      ind_vert = 1
+      ind_horiz += 1
+    }
+    
+    
 }
 
 addObjects(patches)
