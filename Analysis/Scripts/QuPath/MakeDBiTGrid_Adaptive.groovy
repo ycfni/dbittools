@@ -496,7 +496,7 @@ new File(CSV_PATH).withWriter { fw ->
                ann02 = it
                 
                if (ann01 != ann02) {
-                    matx_rownames << "${i-1}x${j-1}"
+                   matx_rownames << "${i}x${j}"
                    ann02_roi = ann02.getROI()
                    ann02_geo = ann02.getROI().getGeometry()
                    

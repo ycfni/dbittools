@@ -4,6 +4,8 @@
 ```
 EXPERIMENT_NAME (matches "experiment_name" in config.json)
 |
+|_______config.json
+|
 |_______raw
 |         |_raw_molecular_data
 |         |                   |_*.fastq.gz files, etc.
