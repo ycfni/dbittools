@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=general
+#SBATCH --partition=week
 #SBATCH --job-name=stpipeline1_50
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
@@ -11,35 +11,34 @@
 
 # NOTE: Load miniconda module if you need the job to have access to a particular conda environment
 # (uncomment if needed)
-module load $(jq '.conda_environment_name' config.json)
+module load miniconda
 conda init
-
-conda activate $(jq '.conda_environment_name' config.json)
+conda activate $(jq -r '.conda_environment_name' ../config.json)
 
 
 # NEED TO RUN OpticNerveHead_DBiT/Analysis/Python/fastq_process.py on *_[Read|R|]*2.fastq first
 # FASTQ reads
-RV=`pwd`/../../data/$(jq '.fastq_RV' config.json)
-FW=`pwd`/../../data/$(jq '.fastq_FW' config.json)
+RV=$(jq -r '.fastq_RV' ../config.json)
+FW=$(jq -r '.fastq_FW_processed' ../config.json)
 
 # References for mapping, annotation and nonRNA-filtering
-MAP=`pwd`/../../ReferenceFiles/$(jq '.reference_files_folder_name' config.json)/
+MAP=`pwd`/../../ReferenceFiles/$(jq -r '.reference_files_folder_name' ../config.json)/
 ANN=`pwd`/../../ReferenceFiles/genes.gtf
 
 # Barcodes settings
-ID=`pwd`/../$(jq '.barcodes_file' config.json)
+ID=`pwd`/../$(jq -r '.barcodes_file' ../config.json)
 
 # Output folder and experiment name
-PATH_TO_OUTPUT=`pwd`/../../data/$(jq '.alt_experiment_name' config.json)/processed/
+PATH_TO_OUTPUT=`pwd`/../../data/$(jq -r '.experiment_name' ../config.json)/$(jq -r '.output_relative_path' ../config.json)
 OUTPUT=$PATH_TO_OUTPUT/st_pipeline_out/
 mkdir -p $OUTPUT
 
-PATH_TO_TEMP=`pwd`/../../data/tmp/
+PATH_TO_TEMP=`pwd`/../../data/$(jq -r '.experiment_name' ../config.json)/tmp/
 TMP=$PATH_TO_TEMP/st_pipeline_tmp/
 mkdir -p $TMP
 
 # EXP is the experiment name Do not add / or \ to the experiment name
-EXP=$(jq '.experiment_name' config.json)
+EXP=$(jq -r '.experiment_name' ../config.json)
 
 # Running the pipeline
 st_pipeline_run.py \

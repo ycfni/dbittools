@@ -1,18 +1,19 @@
 {
 
-"email": "sydney.zink@yale.edu",
+"email": "marcello.distasio@yale.edu",
 
+"conda_environment_name": "stpipeline",
+"fastq_FW": "/home/mmd47/labshare/BrainEpendyma_DBiT/data/raw/raw_molecular_data/usftp21.novogene.com/01.RawData/A22_353_S2/A22_353_S2_CKDL230015378-1A_H75TFDSX7_L4_2.fq.gz",
+"fastq_FW_processed": "/home/mmd47/labshare/BrainEpendyma_DBiT/data/raw/raw_molecular_data/usftp21.novogene.com/01.RawData/A22_353_S2/A22_353_S2_CKDL230015378-1A_H75TFDSX7_L4_2_processed.fastq.gz",
+"fastq_RV": "/home/mmd47/labshare/BrainEpendyma_DBiT/data/raw/raw_molecular_data/usftp21.novogene.com/01.RawData/A22_353_S2/A22_353_S2_CKDL230015378-1A_H75TFDSX7_L4_1.fq.gz",
+    
 "reference_files_folder_name" : "hg38_STAR",
 "genome_folder_path": "/gpfs/ycga/datasets/genomes/Homo_sapiens/NCBI/GRCh38/",
 
-"conda_environment_name": "stpipeline",
-"fastq_FW":  "A22-1834_slide3/raw/usftp21.novogene.com/01.RawData/A221834_ON2/A221834_ON2_CKDL230007519-1A_H3NY2DSX7_L2_2.fq.gz",
-"fastq_RV": "A22-1834_slide3/raw/usftp21.novogene.com/01.RawData/A221834_ON2/A221834_ON2_CKDL230007519-1A_H3NY2DSX7_L2_1.fq.gz",
-
 "barcodes_file": "Library/spatial_barcodes_index_1_50.txt",
-"output_relative_path": "A22-1834_slide3/processed/",
-"data_folder": "/gpfs/gibbs/pi/b_hafler/OpticNerveHead_DBiT/data",
-"experiment_name": "ONH_A22-1834_S3",
+"output_relative_path": "/processed/",
+"data_folder": "/home/mmd47/labshare/BrainEpendyma_DBiT/data/",
+"experiment_name": "A22-353_Ependyma",
 
 "THE FOLLOWING ARE READ_DBIT ARGUMENTS": "AND QUPATH ARGUMENTS",
 "fiducial_diameter_fullres": "288.25050000000005",
