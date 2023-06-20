@@ -29,10 +29,19 @@ from anndata import (
 )
 from anndata import read as read_h5ad
 
-class read_dbit:
 
-    def __init__(self):
-        self.docstring = """
+def read_dbit(
+        path: Union[str, Path],
+        genome: Optional[str] = None,
+        *,
+        count_file: str = "stdata.tsv",
+        library_id: str = None,
+        load_images: Optional[bool] = True,
+        source_image_path: Optional[Union[str, Path]] = None,
+) -> AnnData:
+
+    
+    docstring = """
     Read DBiT-seq dataset.
     In addition to reading DBiT-seq count matrices,
     this looks for the `spatial` folder and loads images,
@@ -79,15 +88,7 @@ class read_dbit:
 
 """
 
-def read_dbit(
-        path: Union[str, Path],
-        genome: Optional[str] = None,
-        *,
-        count_file: str = "stdata.tsv",
-        library_id: str = None,
-        load_images: Optional[bool] = True,
-        source_image_path: Optional[Union[str, Path]] = None,
-) -> AnnData:
+
     
     path = Path(path)
 
@@ -100,7 +101,7 @@ def read_dbit(
         tissue_mask=os.path.join(path,'spatial','tissue_hires_in_tissue_mask.png'),
         intersection_matx=os.path.join(path,'spatial','intersections_matx.txt'),
     )
-    
+
     p = pd.read_csv(files['count_file'], sep='\t', header=0, index_col=0)
     adata = AnnData(X=p, dtype=np.float32)
 
@@ -112,7 +113,6 @@ def read_dbit(
         # check if files exist, continue if images are missing, though
         for key,val in files.items():
             if not os.path.exists(val):
-                files[key] = None
                 if key == 'count_file':
                     raise OSError(f"You need a counts matrix file. I am looking for: " + val)
                 elif any(x in str(val) for x in ["hires_image", "lowres_image", "intersections"]):
@@ -122,7 +122,7 @@ def read_dbit(
                     )
                 elif any(x in str(val) for x in ["tissue_positions"]):
                     warn(
-                        f"You seem to be missing the tissue position list file:.\n"
+                        f"You seem to be missing the tissue position list file.\n"
                         f"Could not find '{val}'. Don't worry, I'll build one for you."
                     )
                 
@@ -138,8 +138,8 @@ def read_dbit(
             adata.uns["spatial"][library_id]['images'][res] = image_in
 
 
-        config_dict = json.loads(files['config_file'])
-        self.config_dict = config_dict
+        with open(files['config_file'], 'r') as j:
+            config_dict = json.loads(j.read())
 
         numeric_config_keys = ["nChannels_horiz", "nChannels_vert", "channel_size_horiz", 
                                 "channel_size_vert", "interchannel_space_horiz", 
@@ -148,15 +148,15 @@ def read_dbit(
         for key in numeric_config_keys:
             config_dict[key] = float(config_dict[key])
 
-        self.nChannels_horiz = config_dict["nChannels_horiz"] #50
-        self.nChannels_vert = config_dict["nChannels_vert"] #50
-        self.channel_size_horiz = config_dict["channel_size_horiz"] #25
-        self.channel_size_vert = config_dict["channel_size_vert"] #25
-        self.interchannel_space_horiz = config_dict["interchannel_space_horiz"] #25
-        self.interchannel_space_vert = config_dict["interchannel_space_vert"] #25
+        nChannels_horiz = config_dict["nChannels_horiz"] #50
+        nChannels_vert = config_dict["nChannels_vert"] #50
+        channel_size_horiz = config_dict["channel_size_horiz"] #25
+        channel_size_vert = config_dict["channel_size_vert"] #25
+        interchannel_space_horiz = config_dict["interchannel_space_horiz"] #25
+        interchannel_space_vert = config_dict["interchannel_space_vert"] #25
 
         #For 'spot_diameter_fullres', use diagonal of rectangle
-        spot_diameter_fullres = np.sqrt(self.channel_size_horiz^2 + self.self.channel_size_vert^2)
+        spot_diameter_fullres = np.sqrt(pow(channel_size_horiz,2) + pow(channel_size_vert,2))
 
         # read json scalefactors
         try:
@@ -182,8 +182,12 @@ def read_dbit(
 
         ### Read coordinates
 
-        # Check if tissue_positions_file exists, and build one if it doesn't.
+        print("FILES")
+        print(files)
 
+        
+        # Check if tissue_positions_file exists, and build one if it doesn't.
+        
         if not os.path.exists(files['tissue_positions_file']):
             pl = buildpositionlist(count_file=os.path.join(path,count_file), imfile=files['hires_image'])
             pl.to_csv(files['tissue_positions_file'], header=False)
@@ -232,7 +236,7 @@ def read_dbit(
         )
         
         #add any other intersections matx columns to adata.obs aside from in_tissue (done earlier)
-        if files['intersection_matx']:
+        if os.path.exists(files['intersection_matx']):
             adata = addintersections(adata, os.path.join(path,count_file), files['intersection_matx'])
             
         # put image path in uns
@@ -326,12 +330,11 @@ def addintissue(adata, count_file=None, intersection_matx_file=None, tissue_posi
 
     available = []
     for f in [intersection_matx_file, tissue_positions_file, tissuemask_imfile]:
-        print(f)
         if f == tissue_positions_file:
             #only include the positions file if it already has the in_tissue column to source from
             if not np.array_equal(set(tissueposns_df[1].unique().flatten()),{0,1}):
                 continue
-        if f is not None:
+        if os.path.exists(f):
             available.append(f.split("/")[-1])
 
     #only give the user a choice between files if the positions_list file isn't available to use as the default
